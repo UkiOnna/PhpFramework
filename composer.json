@@ -1,0 +1,8 @@
+{
+    "name": "lessons/framework",
+    "description": "my-framework",
+    "type": "project",
+    "license": "MIT",
+    "minimum-stability": "dev",
+    "require": {}
+}
