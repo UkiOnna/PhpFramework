@@ -4,5 +4,14 @@
     "type": "project",
     "license": "MIT",
     "minimum-stability": "dev",
-    "require": {}
+    "require": {
+        "doctrine/collections": "^2.0@dev",
+        "doctrine/inflector": "^2.0@dev",
+        "catfan/medoo": "dev-master"
+    },
+    "autoload": {
+        "psr-4": {
+            "":"./app"
+        }
+    }
 }
