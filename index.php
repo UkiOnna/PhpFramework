@@ -1,51 +1,115 @@
 <?php
 
 
+use classes\Page;
+use classes\Vars;
+use Klein\Klein;
 use Medoo\Medoo;
 
 include "vendor/autoload.php";
-//
-//function callClass($name)
-//{
-//    $name = Inflector::classify($name);;
-//    if (!class_exists($name)) {
-//        echo "NO";
-//        exit();
-//    }
-//
-//    $class=new $name();
-//
-//    if(!method_exists($class,"getName")){
-//        echo "METHOD";
-//        exit();
-//    }
-//    return $class->getName();
-//}
-//
-//echo callClass("first");
 
-$cfg=include "database.php";
-$db=new Medoo($cfg);
 
-$db->delete("users",[
-    "username"=>"manager"
-]);
-//$db->insert("users",[
-//   "username"=>"manager",
-//   "name"=>"LEXA",
-//   "password"=>"123"
-//]);
+$router = new Klein();
 
-$db->update("users",[
-    "name"=>"BORYA"
-],[
-    "username"=>"manager"
-]);
-$users=$db->select("users","*");
-foreach ($users as$user){
-    foreach ($user as $key=>$value){
-        echo "$key => $value <br>";
+
+$router->respond("GET", "/?", function () {
+    $cfg = include "database.php";
+    $db = new Medoo($cfg);
+    $id = $_GET["id"];
+    if ($id === null) {
+        $news = $db->select("news", "*");
+        $titles = [];
+        $contents = [];
+
+        foreach ($news as $new) {
+            foreach ($new as $key => $value) {
+                if ($key == "title") {
+                    $titles[] = $value;
+                } elseif ($key == "content") {
+                    $contents[] = $value;
+                }
+            }
+        }
+    } else {
+        $news = $db->get("news", "*", [
+            'id' => $id
+        ]);
+        $titles[] = $news["title"];
+        $contents[] = $news["content"];
     }
-    echo "<hr />";
-}
-print_r($users);
+    Vars::set("newsTitle", $titles);
+    Vars::set("newsText", $contents);
+    $page = new Page("news.php");
+    Vars::set("title", "News");
+    Vars::set("content", $page->show());
+
+    include "app/Views/layout.php";
+
+});
+
+$router->respond("GET", "/create/?", function () {
+
+    $cfg = include "database.php";
+    $db = new Medoo($cfg);
+    $title = $_GET["title"];
+    $content = $_GET["content"];
+    if ($title != null && $content != null) {
+        $db->insert("news",
+            [
+                "content" => $content,
+                "title" => $title
+            ]);
+        echo "Added";
+    }
+    else{
+        $page = new Page("newsCreate.html");
+        Vars::set("title", "NewsCreate");
+        Vars::set("content", $page->show());
+        include "app/Views/layout.php";
+    }
+});
+
+$router->respond("GET", "/update/?", function () {
+
+    $cfg = include "database.php";
+    $db = new Medoo($cfg);
+    $id = $_GET["id"];
+    if ($id===null) {
+        header("location:/");
+    }
+    else{
+        $news = $db->get("news", "*", [
+            'id' => $id
+        ]);
+        $titles[] = $news["title"];
+        $contents[] = $news["content"];
+        Vars::set("newsId",$id);
+        Vars::set("newsTitle", $titles[0]);
+        Vars::set("newsText", $contents[0]);
+        $page = new Page("updateNews.php");
+        Vars::set("title", "NewsUpdate");
+        Vars::set("content", $page->show());
+        include "app/Views/layout.php";
+    }
+});
+
+$router->respond("POST", "/update/?", function () {
+
+    $cfg = include "database.php";
+    $db = new Medoo($cfg);
+    $id = $_GET["id"];
+    $db->update("news",[
+        "id"=>$id
+    ],[
+        "title"=> $_GET["title"],
+        "content"=>$_GET["content"]
+    ]);
+    header("location:/");
+
+});
+
+//$router->get("/?",function (){
+//    return "ABout";
+//});
+
+$router->dispatch();
